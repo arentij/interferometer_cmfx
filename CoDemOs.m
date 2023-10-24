@@ -24,14 +24,15 @@ fc= 4.000012951901465e+07;
 fc = 4.000012989240881e07;
 fc = 4.00001284864e+07;
 fc = 4.000013179300075e7;
-
+fc = 4.000012974902647e7;
+fc = 4.000014175033212e7;
 % 128.4864
 phi0 = 0.25*2*pi+1.05*pi;
-phi0 = 6.3499;
+phi0 = 6.05;
 
 
 %%
-debiassed_signal = signal - movmean(signal,15000);
+debiassed_signal = signal - movmean(signal,40);
 ampl_reconst = 2^0.5*movstd(debiassed_signal,15000);
 normalized_signal = signal./ampl_reconst*approx_ampl;
 normalized_signal = normalized_signal - movmean(normalized_signal,15000);
@@ -59,7 +60,7 @@ dl_fit = 500e-6;
 
 f_found = false;
 
-for fit_try = 1:30
+for fit_try = 1:10
     if fit_try > 1
         if err < 0.4 
             fc = b1;
@@ -80,9 +81,9 @@ for fit_try = 1:30
     
     
     dN = fix(dl_fit*fs);
-    Ni_chunks0 = [1, k0m];
-%     Ni_chunks0 = [1, k0m, k01-dN, N_d-dN];
-    Ni_chunks0 = [1, k0m, k01-dN];
+    Ni_chunks0 = [1,  N_d-dN];
+    Ni_chunks0 = [1, k0m, k01-dN, N_d-dN];
+%     Ni_chunks0 = [1, k0m, k01-dN];
     Ni_chunks0 = sort(Ni_chunks0);
     Ni_chunks1 = dN + Ni_chunks0;
     
@@ -170,6 +171,9 @@ mult = exp(-1i*(2*pi*fc*t_array));
 
 y = signal'.*mult;
 
+% maaaybe?
+y = debiassed_signal'.*mult;
+
 y_driver = driver.*mult;
 % y_lowp = lowpass(y,fc*1.5,fs);
 
@@ -197,6 +201,12 @@ deconstr_sig = (phase_s-phase_0);
 
 
 deconstr_sig = unwrap(deconstr_sig);
+
+deconstr_sig2 = movmean((deconstr_sig),12);
+deconstr_sig2 = deconstr_sig2(1:12:end);
+
+int_data{end+1,1} = plot_index;
+int_data{end,2} = deconstr_sig2;
 
 hold on
 % plot(t_array,deconstr_sig,'b')
@@ -227,18 +237,28 @@ figure(plot_index+9)
 
 log_px = log(px)/log(10);
 %
-fft_plt_arr = [1:fix(length(fff)/1000)];
+fft_plt_arr = [1:fix(length(fff)/100)];
 
-plot(fff(fft_plt_arr), log_px(fft_plt_arr),'LineWidth',2)
-
+semilogx(fff(fft_plt_arr), log_px(fft_plt_arr),'LineWidth',2)
+% %%
+% figure(1)
+% hold on
+% plot(fff(fft_plt_arr), log_px(fft_plt_arr),'r--','LineWidth',2)
+% xlim([0 2e5])
+% hold off
+%
 title(['Power spectra of the phase ', num2str(plot_index); string(datetime)])
 xlabel('f, Hz')
 ylabel('PSD, DB')
 
-xlim([0 2.2e3])
+% xlim([0 2.2e3])
 saveas(gcf,[plt_name  'exp' num2str(exp_number) '/exp' num2str(exp_number) '_FFT.fig'])
 
 % x1 = 1
+%%
+% figure(3)
+% hold on
+% semilogx(fff(fft_plt_arr), log_px(fft_plt_arr),'r','LineWidth',1.5)
 
 %%
 % figure(100)
