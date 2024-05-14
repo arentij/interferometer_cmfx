@@ -56,7 +56,7 @@ CoDemOs;
 
 %% experiment ,  
 file_name = 'oct20/RigolDS9.csv'; 
-data = readmatrix(file_name);f
+data = readmatrix(file_name);
 % 
 parse_fname;
 %  

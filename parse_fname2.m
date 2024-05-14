@@ -22,12 +22,6 @@ elseif mo =='feb'
 elseif mo =='mar'
     mnth = 3;
     year = 24;
-elseif mo =='apr'
-    mnth = 4;
-    year = 24;
-elseif mo =='may'
-    mnth = 5;
-    year = 24;
 else
     mo = 0;
     year = 23;
@@ -35,10 +29,10 @@ end
 day = str2num(file_name(4:slash_i-1));
 
 
-exp_ind = strfind(file_name,'DS');
-exp_number = str2double(file_name(exp_ind+2:end-4));
+exp_ind = strfind(file_name,'CMFX_');
+exp_number = str2double(file_name(exp_ind+6:exp_ind+9));
 
-plot_index =(year-23)*10^9 + mnth*10^7 + day*10^5 + exp_number*10^2;
+plot_index =(year-23)*10^9 + mnth*10^7 + day*10^5 + exp_number*10^0;
 
 
 

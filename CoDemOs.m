@@ -26,6 +26,9 @@ fc = 4.00001284864e+07;
 fc = 4.000013179300075e7;
 fc = 4.000012974902647e7;
 fc = 4.000014175033212e7;
+fc = 4e7+137.3328;
+fc = 4e7+147.3328;
+
 % 128.4864
 phi0 = 0.25*2*pi+1.05*pi;
 phi0 = 6.05;
@@ -60,7 +63,12 @@ dl_fit = 500e-6;
 
 f_found = false;
 
-for fit_try = 1:10
+% [px, fff] = pwelch((data0(:,2)),[],[],[],fs);
+% b1_2 = fff(find(px==max(px)));
+% fc = b1_2;
+
+if true
+    for fit_try = 1:1
     if fit_try > 1
         if err < 0.4 
             fc = b1;
@@ -82,8 +90,10 @@ for fit_try = 1:10
     
     dN = fix(dl_fit*fs);
     Ni_chunks0 = [1,  N_d-dN];
+%     Ni_chunks0 = [1, k0m, k01-dN, N_d-dN];
     Ni_chunks0 = [1, k0m, k01-dN, N_d-dN];
-%     Ni_chunks0 = [1, k0m, k01-dN];
+    Ni_chunks0 = [1, k0m, k01-dN];
+
     Ni_chunks0 = sort(Ni_chunks0);
     Ni_chunks1 = dN + Ni_chunks0;
     
@@ -94,6 +104,9 @@ for fit_try = 1:10
         dN_arr = [Ni_chunks0(i_chunk):Ni_chunks1(i_chunk)];
         time_to_fit = [time_to_fit, t_array(dN_arr)];
         current_signal = signal(dN_arr);
+
+%         current_signal = data0(dN_arr,2);
+
         current_signal = current_signal-mean(current_signal);
         current_signal = current_signal/2^0.5/std(current_signal)*approx_ampl;
         signal_to_fit = [signal_to_fit; current_signal];
@@ -112,7 +125,8 @@ for fit_try = 1:10
     % driver = 0.28*sin(2*pi*fc*t_array+phi0);
     
     driver = a1*sin(2*pi*b1*t_array+c1);
-
+    
+    
     sig_dr = abs(debiassed_signal'-driver);
     sig_dr = (movmean(sig_dr,200));
     err = rms(sig_dr)/approx_ampl
@@ -125,12 +139,20 @@ for fit_try = 1:10
     end
     %
 end
-
+end
 if ~f_found 
     warning('The frequency is not that good fit, I will use detrend in the end')
 end
+driver = data0(:,2)';
+driver = driver - movmean(driver,200);
 
+% fixing 250000 scope problem
+for i_dr_p = 1: length(driver)-1
+    if mod(i_dr_p,250000) == 0
+        driver(i_dr_p) = (driver(i_dr_p-1) + driver(i_dr_p-1))/2;
+    end
 
+end
 figure(plot_index)
 
 clf
@@ -167,14 +189,17 @@ saveas(gcf,[plt_name  'exp' num2str(exp_number) '/exp' num2str(exp_number) '_sig
 
 %%
 
-mult = exp(-1i*(2*pi*fc*t_array));
+mult = exp(-1i*(2*pi*b1*t_array));
 
 y = signal'.*mult;
 
 % maaaybe?
 y = debiassed_signal'.*mult;
 
+% if there is a driver data
+% driver = data0(:,2)';
 y_driver = driver.*mult;
+
 % y_lowp = lowpass(y,fc*1.5,fs);
 
 
@@ -199,31 +224,45 @@ xlabel('t, s')
 ylabel('Theta, rad')
 deconstr_sig = (phase_s-phase_0);
 
-
-deconstr_sig = unwrap(deconstr_sig);
+fix_param = 1;
+deconstr_sig = 1/fix_param*unwrap(deconstr_sig*fix_param);
 
 deconstr_sig2 = movmean((deconstr_sig),12);
 deconstr_sig2 = deconstr_sig2(1:12:end);
 
-int_data{end+1,1} = plot_index;
-int_data{end,2} = deconstr_sig2;
+current_file_index = 1+ str2num(file_name(14:end-4));
+all_day_data_array{current_file_index,1} = deconstr_sig;
+all_day_data_array{current_file_index,2} = plot_index;
+
+% int_data{end+1,1} = plot_index;
+% int_data{end,2} = deconstr_sig2;
 
 hold on
 % plot(t_array,deconstr_sig,'b')
 
-lp_flt_phase = movmean((deconstr_sig),1000);
-
-if f_found
-    plot(t_array(1:500:end),lp_flt_phase(1:500:end)-lp_flt_phase(1),'r','LineWidth',2.0)
+lp_flt_phase = movmean((deconstr_sig),500);
+ds_k = 150;
+if true
+    plot(t_array(1:ds_k:end),lp_flt_phase(1:ds_k:end)-lp_flt_phase(1),'r','LineWidth',2.0)
 else
-    plot(t_array(1:500:end),detrend(lp_flt_phase(1:500:end)),'r','LineWidth',2.0)
+    plot(t_array(1:ds_k:end),detrend(lp_flt_phase(1:ds_k:end)),'r','LineWidth',2.0)
 end
+%
+ds_koeff = 150;
+sig_ds = lp_flt_phase(1:ds_koeff:end);
+sig_ds_bp = bandpass(sig_ds,380+300*[-1 1],fs/ds_koeff);
+
+plot(t_array(1:ds_koeff:end),sig_ds_bp,'k-','LineWidth',2.0)
+
+% plot(t_array(1:ds_koeff:end),lp_flt_phase(1:ds_koeff:end) - sig_ds_bp,'b','LineWidth',2.0)
+
+%
 hold off
 % title(string(datetime))
 xlabel('t, s');
 ylabel('Theta, rad');
 title(['Reconstructed phase ', num2str(plot_index); string(datetime) ] )
-
+legend(['Sig0';'S_BP';'S_su'])
 %
 
 saveas(gcf,[plt_name  'exp' num2str(exp_number) '/exp' num2str(exp_number) '_phase.fig'])
@@ -233,13 +272,13 @@ saveas(gcf,[plt_name  'exp' num2str(exp_number) '/exp' num2str(exp_number) '_pha
 %%
 figure(plot_index+9)
 
-[px, fff] = pwelch(detrend(deconstr_sig(1:end)),[],[],[],fs);
+% [px, fff] = pwelch(detrend(deconstr_sig(1:end)),[],[],[],fs);
 
-log_px = log(px)/log(10);
+% log_px = log(px)/log(10);
 %
-fft_plt_arr = [1:fix(length(fff)/100)];
+% fft_plt_arr = [1:fix(length(fff)/100)];
 
-semilogx(fff(fft_plt_arr), log_px(fft_plt_arr),'LineWidth',2)
+% semilogx(fff(fft_plt_arr), log_px(fft_plt_arr),'LineWidth',2)
 % %%
 % figure(1)
 % hold on

@@ -3,7 +3,7 @@ fs = 0.5e9;
 
 f_phi = 1e3;
 
-t_lenght = 0.04;
+t_lenght = 0.004;
 t = (0:1/fs:t_lenght)';
 
 

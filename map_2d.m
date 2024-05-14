@@ -3,9 +3,9 @@ R1 = 154e-3;
 D0 = 0.9*25.4e-3;
 mu = 1+R1/2/f;
 
-r_sens = 150e-6;
+r_sens = 0.5*150e-6;  %APD 230e-6 diam; % IR Diode d = 150e-6;
 
-Dls = 195e-3;
+Dls = 189e-3;
 
 z1 = 0;
 %% let's have a 2D space between - 50 mm and -1000 mm in Z and -D0 and +D0 in Y
@@ -68,8 +68,11 @@ plot(y_space,P_space(i_z,:))
 title(['Z = ' num2str(z_plt)])
 
 
-figure(46)
-i_y = 501;
-y_plt = y_space(i_y);    
-plot(z_space,P_space(:,i_y))
-title(['Y = ' num2str(y_plt)])
+
+
+
+figure(48)
+inches = linspace(0,36,360); % on the marking
+m_dist = 338e-3-152e-3+25.4e-3*inches;
+
+plot(inches,m_dist)
