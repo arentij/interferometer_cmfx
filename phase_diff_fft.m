@@ -95,7 +95,7 @@ function [phase_d] = phase_diff_fft(signal, driver)
     end
     
     % restrict the phase difference in the range [-pi, pi]
-    phase_d = mod(PhDiff + pi, 2*pi) - pi;
-    
+%     phase_d = mod(PhDiff + pi, 2*pi) - pi;
+    phase_d = PhDiff;
 %     abs(1 - abs(dph / PhDiff))
 end
